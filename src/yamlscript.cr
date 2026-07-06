@@ -9,7 +9,7 @@ class YAMLScript
   # This value is automatically updated by 'make bump'.
   # The version number is used to find the correct shared library file.
   # We currently only support binding to an exact version of libys.
-  YAMLSCRIPT_VERSION = "0.2.25"
+  YAMLSCRIPT_VERSION = "0.2.26"
 
   # A low-level interface to the native library
   module LibYS
@@ -18,13 +18,19 @@ class YAMLScript
         "dylib"
       {% elsif flag?(:linux) %}
         "so"
+      {% elsif flag?(:windows) %}
+        "dll"
       {% else %}
         raise Error.new("Unsupported platform for yamlscript.")
       {% end %}
     end
 
     def self.libys_name
-      "libys.#{extension}.#{YAMLScript::YAMLSCRIPT_VERSION}"
+      {% if flag?(:windows) %}
+        "libys.dll"
+      {% else %}
+        "libys.#{extension}.#{YAMLScript::YAMLSCRIPT_VERSION}"
+      {% end %}
     end
 
     # Returns an array of library paths extracted from the LD_LIBRARY_PATH
@@ -32,19 +38,31 @@ class YAMLScript
     def self.ld_library_paths
       paths = [] of String
 
-      # Check LD_LIBRARY_PATH first
-      if env_path = ENV["LD_LIBRARY_PATH"]?
-        paths.concat(env_path.split(":"))
-      end
+      {% if flag?(:windows) %}
+        # The dll is found via the PATH directories on Windows
+        if env_path = ENV["PATH"]?
+          paths.concat(env_path.split(";"))
+        end
 
-      # Add standard system paths
-      paths << "/usr/local/lib"
-      paths << "/usr/lib"
+        # Add user's local lib directory if USERPROFILE is set
+        if home = ENV["USERPROFILE"]?
+          paths << File.join(home, ".local", "lib")
+        end
+      {% else %}
+        # Check LD_LIBRARY_PATH first
+        if env_path = ENV["LD_LIBRARY_PATH"]?
+          paths.concat(env_path.split(":"))
+        end
 
-      # Add user's local lib directory if HOME is set
-      if home = ENV["HOME"]?
-        paths << File.join(home, ".local", "lib")
-      end
+        # Add standard system paths
+        paths << "/usr/local/lib"
+        paths << "/usr/lib"
+
+        # Add user's local lib directory if HOME is set
+        if home = ENV["HOME"]?
+          paths << File.join(home, ".local", "lib")
+        end
+      {% end %}
 
       paths
     end
