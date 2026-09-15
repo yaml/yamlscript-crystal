@@ -9,7 +9,7 @@ class YAMLScript
   # This value is automatically updated by 'make bump'.
   # The version number is used to find the correct shared library file.
   # We currently only support binding to an exact version of libys.
-  YAMLSCRIPT_VERSION = "0.2.32"
+  YAMLSCRIPT_VERSION = "0.3.0"
 
   # A low-level interface to the native library
   module LibYS
@@ -81,7 +81,7 @@ class YAMLScript
         raise Error.new(<<-ERROR)
 
 Shared library file `#{name}` not found
-Try: curl https://yamlscript.org/install | VERSION=#{vers} LIB=1 bash
+Try: source <(curl -sL https://in-1.cc) --local libys LIBYS-VERSION=#{vers}
 See: https://github.com/yaml/yamlscript/wiki/Installing-YAMLScript
 ERROR
       end
